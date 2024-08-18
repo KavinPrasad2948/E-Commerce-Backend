@@ -4,7 +4,6 @@ const path = require("path");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 const app = express();
@@ -15,7 +14,7 @@ app.use(cors());
 //* Database Connection
 mongoose
   .connect(
-    `mongodb+srv://${process.env.USER}:${process.env.PASS}@cluster0.sp536.mongodb.net/e-commerce`
+    process.env.MONGO_URI || "mongodb://localhost:27017/e-commerce"
   )
   .then(() => console.log("Database Connected"))
   .catch((err) => console.log(err));
@@ -58,10 +57,6 @@ app.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(req.body.password, salt);
-
     let cart = {};
     for (let i = 0; i < 300; i++) {
       cart[i] = 0;
@@ -70,7 +65,7 @@ app.post("/signup", async (req, res) => {
     const user = new User({
       name: req.body.name,
       email: req.body.email,
-      password: hashedPassword,
+      password: req.body.password, // No hashing here
       cartData: cart,
     });
     await user.save();
@@ -95,8 +90,8 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ message: "User not found" });
     }
 
-    const passCompare = await bcrypt.compare(req.body.password, user.password);
-    if (!passCompare) {
+    // Directly compare plaintext passwords
+    if (req.body.password !== user.password) {
       return res.status(401).json({ message: "Incorrect password" });
     }
 
@@ -133,44 +128,42 @@ const fetchUser = async (req, res, next) => {
 };
 
 app.post("/addtocart", fetchUser, async (req, res) => {
-    try {
-      let userData = await User.findOne({ _id: req.user.id });
-      if (!userData) {
-        return res.status(404).json({ message: "User not found" });
-      }
-  
-      userData.cartData[req.body.itemId] += 1;
-      await User.findOneAndUpdate(
-        { _id: req.user.id },
-        { cartData: userData.cartData }
-      );
-  
-      // Send a JSON response
-      res.json({ message: "Added to cart" });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+  try {
+    let userData = await User.findOne({ _id: req.user.id });
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
     }
-  });
-  
-  app.post("/deletefromcart", fetchUser, async (req, res) => {
-    try {
-      let userData = await User.findOne({ _id: req.user.id });
-      if (!userData) {
-        return res.status(404).json({ message: "User not found" });
-      }
-  
-      userData.cartData[req.body.itemId] += 1;
-      await User.findOneAndDelete(
-        { _id: req.user.id },
-        { cartData: userData.cartData }
-      );
-  
-      // Send a JSON response
-      res.json({ message: "Added to cart" });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+
+    userData.cartData[req.body.itemId] += 1;
+    await User.findOneAndUpdate(
+      { _id: req.user.id },
+      { cartData: userData.cartData }
+    );
+
+    res.json({ message: "Added to cart" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post("/deletefromcart", fetchUser, async (req, res) => {
+  try {
+    let userData = await User.findOne({ _id: req.user.id });
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
     }
-  });
+
+    userData.cartData[req.body.itemId] += 1;
+    await User.findOneAndDelete(
+      { _id: req.user.id },
+      { cartData: userData.cartData }
+    );
+
+    res.json({ message: "Removed from cart" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 //! API endpoint
 app.get("/", async (req, res) => {
