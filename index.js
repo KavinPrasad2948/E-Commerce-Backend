@@ -76,7 +76,7 @@ app.post("/signup", async (req, res) => {
       },
     };
 
-    const token = jwt.sign(data, process.env.SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(data, "Ka_vin^$Pr@sa!d_-Secret", { expiresIn: '1h' });
     res.json({ token: token });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -100,7 +100,7 @@ app.post("/login", async (req, res) => {
         id: user.id,
       },
     };
-    const token = jwt.sign(data, process.env.SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(data, "Ka_vin^$Pr@sa!d_-Secret", { expiresIn: '1h' });
     res.json({ token: token });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -116,7 +116,7 @@ const fetchUser = async (req, res, next) => {
     }
 
     try {
-      const data = jwt.verify(token, process.env.SECRET);
+      const data = jwt.verify(token, "Ka_vin^$Pr@sa!d_-Secret");
       req.user = data.user;
       next();
     } catch (error) {
