@@ -15,7 +15,7 @@ app.use(cors());
 //* Database Connection
 mongoose
   .connect(
-    process.env.MONGO_URI || "mongodb://localhost:27017/e-commerce"
+    `mongodb+srv://${process.env.USER}:${process.env.PASS}@cluster0.sp536.mongodb.net/e-commerce`
   )
   .then(() => console.log("Database Connected"))
   .catch((err) => console.log(err));
