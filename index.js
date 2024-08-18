@@ -165,6 +165,19 @@ app.post("/deletefromcart", fetchUser, async (req, res) => {
   }
 });
 
+app.get('/getcartitems', fetchUser, async (req, res) => {
+  try {
+    let userData = await User.findOne({ _id: req.user.id });
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(userData.cartData);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+
 //! API endpoint
 app.get("/", async (req, res) => {
   try {
